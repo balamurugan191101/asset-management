@@ -1,1 +1,85 @@
-/* You can add global styles to this file, and also import other style files */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	min-height: 100%;
+}
+
+body {
+	margin: 0;
+	overflow-x: hidden;
+}
+
+img,
+svg,
+video,
+canvas {
+	max-width: 100%;
+}
+
+input,
+select,
+textarea {
+	max-width: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+	font: inherit;
+}
+
+.btn-primary {
+	background-color: #087f8c;
+	border-color: #087f8c;
+	color: #fff;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+	background-color: #075e67;
+	border-color: #075e67;
+	color: #fff;
+}
+
+.btn-primary:disabled {
+	background-color: #8baeb2;
+	border-color: #8baeb2;
+	color: #fff;
+}
+
+.asset-table { min-width: 0; table-layout: fixed; width: 100%; }
+.asset-table .column-number { width: 3%; }.asset-table .column-machine { width: 12%; }.asset-table .column-product { width: 9%; }.asset-table .column-make { width: 8%; }.asset-table .column-model { width: 11%; }.asset-table .column-serial { width: 15%; }.asset-table .column-user { width: 10%; }.asset-table .column-ip { width: 7%; }.asset-table .column-status { width: 10%; }.asset-table .column-event { width: 11%; }.asset-table .column-actions { width: 4%; }
+.asset-table th { border-bottom: 1px solid #dfe6ec; }.asset-table td { height: 42px; vertical-align: middle; }.asset-table .grouped-cell { vertical-align: middle !important; }.asset-table .grouped-cell strong, .asset-table .grouped-cell span { display: block; }.asset-table .ip-cell { color: #172536; font-family: monospace; font-size: .8rem; overflow: hidden; text-overflow: ellipsis; }.asset-table .event-cell { color: #172536; font-size: .78rem; line-height: 1.35; white-space: normal; }.asset-table .event-cell span { color: #667384; }.asset-table .status-cell { padding-inline: 12px; }.asset-table .status-select { min-height: 32px; width: 100%; }
+.asset-table tbody td { max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.asset-table tbody td.expanded-cell { max-width: none; overflow: visible; overflow-wrap: anywhere; white-space: normal; }
+.asset-table tbody td.grouped-cell { max-width: none; overflow: visible; text-overflow: clip; white-space: normal; }
+.asset-table .ip-cell { text-align: center; }.asset-table .status-cell { padding: 14px 12px; }.asset-table .status-select { border: 0; border-radius: 0; font-size: .78rem; font-weight: 700; min-height: 32px; padding: 7px 10px; }.asset-table .event-cell { padding-inline: 14px; }.asset-table .delete-cell { padding: 14px 8px; text-align: center; }.asset-table .delete-button { align-items: center; display: inline-flex; justify-content: center; margin: 0; min-height: 34px; min-width: 34px; }
+.asset-table td.grouped-cell.status-cell, .asset-table td.grouped-cell.event-cell, .asset-table td.grouped-cell.delete-cell { vertical-align: middle !important; }
+.asset-table td.grouped-cell.status-cell, .asset-table td.grouped-cell.event-cell, .asset-table td.grouped-cell.delete-cell { text-align: center; }
+.asset-table td[rowspan] { vertical-align: middle !important; }
+.asset-table th:last-child { text-align: center; }
+.import-preview-modal { max-height: calc(100vh - 40px); max-width: min(1180px, 96vw); }
+.import-preview-table-wrap { flex: 1 1 auto; max-height: 52vh; max-width: 100%; overflow-x: auto; overflow-y: auto; }
+.import-preview-table { min-width: 1100px; width: max-content; }
+
+@media (max-width: 767.98px) {
+	.modal-backdrop {
+		padding: 12px;
+	}
+
+	.modal-dialog {
+		margin: .5rem auto;
+		max-width: calc(100vw - 24px);
+	}
+}
+
+:focus-visible {
+	outline: 3px solid rgba(8, 127, 140, .45);
+	outline-offset: 2px;
+}

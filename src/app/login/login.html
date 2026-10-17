@@ -1,0 +1,248 @@
+<div class="login-page container-fluid min-vh-100 p-0">
+  <div class="row g-0 min-vh-100">
+
+    <!-- LEFT SIDE IMAGE (Desktop Only) -->
+    <div class="col-lg-8 d-none d-lg-block login-visual">
+      <div class="login-visual-content">
+        <span class="login-visual-mark">IF</span>
+        <p class="login-visual-kicker">iFluids Engineering</p>
+        <h1>Make every asset<br>work harder.</h1>
+        <p class="login-visual-copy">A clear view of the equipment, maintenance, and people that keep your operation moving.</p>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDE FORM CARD -->
+    <div class="col-12 col-lg-4 d-flex align-items-center justify-content-center p-3 p-sm-4 bg-light login-panel">
+      <div class="login-card p-4 rounded shadow bg-white w-100">
+
+        <!-- ===================== LOGIN FORM ===================== -->
+        @if (!isresetpassword) {
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+            <!-- LOGO -->
+            <div class="text-center mb-4">
+              <div class="login-logo" aria-label="iFluids Engineering">IF</div>
+            </div>
+
+            <h3 class="text-center mb-4">Login</h3>
+
+            <!-- COMPANY DROPDOWN -->
+            <!-- <div class="mb-3">
+              <select 
+                class="form-select"
+                [(ngModel)]="selectcompanyname"
+                [ngModelOptions]="{standalone: true}">
+                <option value="" disabled selected>Select Company</option>
+                @for (company of companyname; track company.comp_name) {
+                  <option [value]="company.comp_name">
+                    {{ company.comp_name }}
+                  </option>
+                }
+              </select>
+            </div> -->
+
+            <!-- USERNAME / EMAIL FIELD -->
+            <div class="mb-3">
+              <div class="position-relative">
+                <i class="fa-solid fa-user position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                <input 
+                  id="email" 
+                  type="text" 
+                  formControlName="email" 
+                  class="form-control ps-5"
+                  placeholder="Enter emp no or email"
+                  (input)="clearerror()" 
+                />
+              </div>
+
+              @if (loginForm.get('email')?.touched && loginForm.get('email')?.invalid) {
+                <div class="error text-danger mt-1">
+                  @if (loginForm.get('email')?.hasError('required')) {
+                    <small>Email or Username is required.</small>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- PASSWORD FIELD WITH EYE ICON TOGGLE -->
+            <div class="mb-3">
+              <div class="position-relative">
+                <i class="fa-solid fa-lock position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                <input 
+                  id="password" 
+                  [type]="showpasswordtextbox ? 'text' : 'password'" 
+                  formControlName="password" 
+                  class="form-control ps-5 pe-5" 
+                  placeholder="Enter password" 
+                  autocomplete="off" 
+                />
+
+                <i 
+                  class="fa-solid password-toggle position-absolute top-50 end-0 translate-middle-y me-3"
+                  [ngClass]="showpasswordtextbox ? 'fa-eye' : 'fa-eye-slash'"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Toggle password visibility"
+                  (click)="togglepasswordvisibility()">
+                </i>
+              </div>
+
+              @if (loginForm.get('password')?.touched && loginForm.get('password')?.invalid) {
+                <div class="error text-danger mt-1">
+                  @if (loginForm.get('password')?.hasError('required')) {
+                    <small>Password is required.</small>
+                  }
+                  @if (loginForm.get('password')?.hasError('minlength')) {
+                    <small>Minimum 6 characters required.</small>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- ERROR MESSAGE DISPLAY -->
+            @if (errormessage) {
+              <div class="text-danger mb-3">
+                <small>{{ errormessage }}</small>
+              </div>
+            }
+
+            <!-- REMEMBER ME CHECKBOX -->
+            <div class="d-flex align-items-center mb-3">
+              <input 
+                id="rememberMe"
+                class="form-check-input me-2 mt-0" 
+                type="checkbox" 
+                formControlName="rememberMe"
+                style="cursor: pointer;"
+              />
+              <label for="rememberMe" class="form-check-label" style="cursor: pointer;">
+                Remember Me
+              </label>
+            </div>
+
+            <!-- SUBMIT BUTTON -->
+            <div class="d-grid mb-3">
+              <button 
+                type="submit" 
+                class="btn btn-primary py-2 w-100" 
+                [disabled]="loginForm.invalid">
+                Login
+              </button>
+            </div>
+
+            <!-- FORGOT PASSWORD LINK -->
+            <div class="text-center">
+              <a 
+                href="javascript:void(0)" 
+                class="text-decoration-none text-primary" 
+                style="cursor: pointer;"
+                (click)="restpassword()">
+                Forgot My Password?
+              </a>
+            </div>
+
+          </form>
+        }
+
+        <!-- ===================== RESET PASSWORD FORM ===================== -->
+        @if (isresetpassword) {
+          <form (submit)="$event.preventDefault()">
+
+            <div class="text-center mb-4">
+              <div class="login-logo" aria-label="iFluids Engineering">IF</div>
+            </div>
+
+            <h3 class="text-center mb-4">Reset Password</h3>
+
+            @if (resetToken) {
+              <div class="mb-3">
+                <label for="newPassword" class="form-label">New password</label>
+                <input id="newPassword" type="password" class="form-control" [(ngModel)]="newPassword"
+                  name="newPassword" minlength="6" autocomplete="new-password">
+              </div>
+              <div class="mb-3">
+                <label for="confirmPassword" class="form-label">Confirm password</label>
+                <input id="confirmPassword" type="password" class="form-control" [(ngModel)]="confirmPassword"
+                  name="confirmPassword" autocomplete="new-password">
+              </div>
+              @if (errormessage2) {
+                <div class="text-danger mt-1 mb-3"><small>{{ errormessage2 }}</small></div>
+              }
+              <div class="d-grid mb-3">
+                <button type="button" class="btn btn-primary py-2" (click)="resetPassword()">Update password</button>
+              </div>
+            } @else if (isMailSent2) {
+              <!-- COMPANY DROPDOWN
+              <div class="mb-3">
+                <select 
+                  class="form-select"
+                  [(ngModel)]="selectcompanyname"
+                  name="selectcompanyname">
+                  <option value="" disabled selected>Select Company</option>
+                  @for (company of companyname; track company.comp_name) {
+                    <option [value]="company.comp_name">
+                      {{ company.comp_name }}
+                    </option>
+                  }
+                </select>
+              </div> -->
+
+              <!-- USERNAME / EMP NO -->
+              <div class="mb-3">
+                <div class="position-relative">
+                  <i class="fa-solid fa-user position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                  <input 
+                    type="text"
+                    class="form-control ps-5"
+                    placeholder="Enter emp no or username"
+                    [(ngModel)]="rsusername"
+                    name="username"
+                    (input)="clearerror()" 
+                  />
+                </div>
+
+                <!-- RESET ERROR MESSAGE -->
+                @if (errormessage2) {
+                  <div class="text-danger mt-1">
+                    <small>{{ errormessage2 }}</small>
+                  </div>
+                }
+              </div>
+
+              <!-- SEND BUTTON -->
+              <div class="d-grid mb-3">
+                <button 
+                  type="button" 
+                  class="btn btn-primary py-2" 
+                  (click)="onsend()">
+                  Send
+                </button>
+              </div>
+            }
+
+            <!-- MAIL SENT CONFIRMATION -->
+            @if (isMailSent) {
+              <div class="text-success text-center mb-3">
+                Reset password mail has been sent to your email.
+              </div>
+            }
+
+            <!-- BACK TO LOGIN LINK -->
+            <div class="text-center mt-3">
+              <a 
+                href="javascript:void(0)" 
+                class="text-decoration-none text-primary" 
+                style="cursor: pointer;"
+                (click)="backtologin()">
+                Back to Login
+              </a>
+            </div>
+
+          </form>
+        }
+
+      </div>
+    </div>
+
+  </div>
+</div>

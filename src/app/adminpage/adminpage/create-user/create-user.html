@@ -1,0 +1,174 @@
+<div class="user-page">
+  <div class="user-page-header">
+    <div>
+      <span class="section-kicker">User management</span>
+      <h1>User list</h1>
+      <p>Review team members, roles, and access status.</p>
+    </div>
+    <div class="user-page-actions">
+      <a class="btn btn-outline-secondary" routerLink="/adminpage/home" aria-label="Back to dashboard"
+        title="Back to dashboard">
+        <i class="fa-solid fa-arrow-left me-2" aria-hidden="true"></i><span class="button-label">Back to dashboard</span>
+      </a>
+      <a class="btn btn-primary" (click)="openCreateUserModal()" aria-label="Create user" title="Create user">
+        <i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i><span class="button-label">Create user</span>
+      </a>
+      <button class="btn btn-light" type="button" aria-label="Export" title="Export" (click)="exportUsers()">
+        <i class="fa-solid fa-share-from-square me-2" aria-hidden="true"></i><span class="button-label">Export</span></button>
+      <button class="btn btn-light" type="button" aria-label="Import" title="Import" (click)="userImport.click()">
+        <i class="fa-solid fa-download me-2" aria-hidden="true"></i><span class="button-label">Import</span></button>
+      <input #userImport class="visually-hidden" type="file" accept=".csv,text/csv" (change)="importUsers($event)">
+    </div>
+  </div>
+
+  <section class="user-list-card">
+    <div class="user-list-toolbar">
+      <div>
+        <span class="section-kicker">Directory</span>
+        <h2>All users <span>{{ filteredUsers.length }}</span></h2>
+      </div>
+      <div class="user-list-actions">
+        <button class="btn btn-light" type="button" aria-label="Filter" title="Filter" [attr.aria-pressed]="showFilters"
+          (click)="toggleFilters()">
+          <i class="fa-solid fa-filter me-2" aria-hidden="true"></i><span class="button-label">Filter</span>
+        </button>
+        <button class="btn btn-light" type="button" aria-label="Sort users" title="Sort users" (click)="toggleSort()">
+          <i class="fa-solid fa-arrow-up-wide-short me-2" aria-hidden="true"></i><span class="button-label">Sort</span>
+        </button>
+        <button class="btn btn-light" type="button" aria-label="Delete selected users" title="Delete selected users"
+          [disabled]="selectedUserIds.size === 0" (click)="deleteSelected()">
+          <i class="fa-solid fa-trash-can me-2" aria-hidden="true"></i><span class="button-label">Delete</span>
+        </button>
+      </div>
+      <div class="user-search">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="search" placeholder="Search users" aria-label="Search users" [(ngModel)]="searchTerm">
+      </div>
+    <div *ngIf="showFilters" class="user-filter-panel">
+      <label>Role
+        <select [(ngModel)]="roleFilter" aria-label="Filter by role">
+          <option value="All">All roles</option>
+          <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+        </select>
+      </label>
+      <label>Status
+        <select [(ngModel)]="statusFilter" aria-label="Filter by status">
+          <option value="All">All statuses</option>
+          <option value="Active">Active</option>
+          <option value="Pending">Pending</option>
+        </select>
+      </label>
+      <button class="clear-filters" type="button" [disabled]="!hasActiveFilters"
+        (click)="clearFilters()">Clear filters</button>
+    </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table user-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th><input type="checkbox" aria-label="Select all users" [checked]="allVisibleSelected"
+              (change)="toggleAllVisible($event)"></th>
+            <th>User</th>
+            <th>Email ID</th>
+            <th>Employee ID</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of filteredUsers">
+            <td data-label="Select"><input type="checkbox" aria-label="Select user"
+              [checked]="selectedUserIds.has(user.employeeId)"
+              (change)="toggleUserSelection(user.employeeId)"></td>
+            <td data-label="User"><strong>{{ user.name }}</strong></td>
+            <td data-label="Email ID">{{ user.email }}</td>
+            <td data-label="Employee ID">{{ user.employeeId }}</td>
+            <td data-label="Role">{{ user.role }}</td>
+            <td data-label="Department">{{ user.department }}</td>
+            <td data-label="Status"><span class="status-badge" [class.pending]="user.status === 'Pending'">{{
+                user.status }}</span></td>
+            <td class="user-actions"><button class="btn btn-sm btn-light" type="button" aria-label="More actions"><i
+                  class="fa-solid fa-ellipsis" aria-hidden="true"></i></button></td>
+          </tr>
+          <tr *ngIf="filteredUsers.length === 0">
+            <td class="empty-state" colspan="8">No users match your search.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+
+<div class="modal fade" [class.show]="isCreateUserModalOpen" [class.d-block]="isCreateUserModalOpen" tabindex="-1"
+  role="dialog" aria-labelledby="createUserModalTitle" [attr.aria-hidden]="!isCreateUserModalOpen"
+  (click)="closeCreateUserModal()">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document" (click)="$event.stopPropagation()">
+    <div class="modal-content create-user-modal">
+      <div class="modal-header">
+        <div>
+          <span class="section-kicker">User management</span>
+          <h2 class="modal-title" id="createUserModalTitle">Create user</h2>
+        </div>
+        <button class="btn-close" type="button" aria-label="Close create user dialog"
+          (click)="closeCreateUserModal()"></button>
+      </div>
+      <div class="modal-body">
+        <p *ngIf="createUserError" class="create-user-api-error" role="alert">{{ createUserError }}</p>
+        <app-create-user-form (saved)="saveUser($event)"
+          (cancelled)="closeCreateUserModal()"></app-create-user-form>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show" *ngIf="isCreateUserModalOpen"></div>
+
+<div class="modal fade" [class.show]="isImportPreviewOpen" [class.d-block]="isImportPreviewOpen" tabindex="-1"
+  role="dialog" aria-labelledby="importPreviewTitle" [attr.aria-hidden]="!isImportPreviewOpen"
+  (click)="cancelImportPreview()">
+  <div class="modal-dialog modal-dialog-centered modal-xl" role="document" (click)="$event.stopPropagation()">
+    <div class="modal-content create-user-modal">
+      <div class="modal-header">
+        <div>
+          <span class="section-kicker">Import review</span>
+          <h2 class="modal-title" id="importPreviewTitle">Preview {{ importFileName }}</h2>
+        </div>
+        <button class="btn-close" type="button" aria-label="Close import preview"
+          (click)="cancelImportPreview()"></button>
+      </div>
+      <div class="modal-body">
+        <p class="import-preview-summary">{{ importPreviewUsers.length }} user(s) ready to import.</p>
+        <p *ngIf="importError" class="create-user-api-error" role="alert">{{ importError }}</p>
+        <div class="table-responsive import-preview-table">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Password</th><th>Employee ID</th><th>Role</th><th>Department</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let user of importPreviewUsers">
+                <td>{{ user.firstName }} {{ user.lastName }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.password }}</td>
+                <td>{{ user.employeeId }}</td>
+                <td>{{ user.role }}</td>
+                <td>{{ user.department }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="import-preview-actions">
+          <button class="btn btn-light" type="button" [disabled]="isImporting"
+            (click)="cancelImportPreview()">Cancel</button>
+          <button class="btn btn-primary" type="button" [disabled]="isImporting" (click)="confirmImport()">
+            <i class="fa-solid" [class.fa-cloud-arrow-up]="!isImporting" [class.fa-spinner]="isImporting"
+              [class.fa-spin]="isImporting" aria-hidden="true"></i>{{ isImporting ? 'Uploading...' : 'Upload users' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show" *ngIf="isImportPreviewOpen"></div>

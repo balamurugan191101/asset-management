@@ -1,0 +1,60 @@
+<div class="category-page">
+  <header class="category-header">
+    <div>
+      <span class="section-kicker">Dedicated inventory</span>
+      <h1>{{ categoryName() }}</h1>
+      <p>View and manage every {{ categoryName() | lowercase }} asset in one place.</p>
+    </div>
+    <div class="category-actions">
+      <button class="btn btn-light" type="button" (click)="goToInventory()">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> All inventory
+      </button>
+      <a class="btn register-button" routerLink="/adminpage/inventory" [queryParams]="{ category: categorySlug() }">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i> Register asset
+      </a>
+    </div>
+  </header>
+
+  <section class="category-toolbar" aria-label="Category inventory controls">
+    <div>
+      <span class="section-kicker">{{ categoryName() }} register</span>
+      <h2>{{ categoryAssets().length }} assets</h2>
+    </div>
+    <label class="search-field">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <span class="visually-hidden">Search {{ categoryName() }}</span>
+      <input type="search" placeholder="Search this category..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+    </label>
+  </section>
+
+  @if (categoryAssets().length) {
+    <div class="table-wrap">
+      <table class="asset-table">
+        <caption class="visually-hidden">{{ categoryName() }} asset list</caption>
+        <thead><tr><th>S.No</th><th>Machine Name</th><th>Product Name</th><th>Make</th><th>Model</th><th>Serial Number</th><th>User Name</th><th>IP</th><th>Status</th></tr></thead>
+        <tbody>
+          @for (asset of categoryAssets(); track asset.id; let rowNumber = $index) {
+            <tr>
+              <td class="serial-cell">{{ rowNumber + 1 }}</td>
+              <td><strong>{{ asset.machineName || asset.name }}</strong><span>{{ asset.id }}</span></td>
+              <td>{{ asset.productName || '-' }}</td>
+              <td>{{ asset.make || '-' }}</td>
+              <td>{{ asset.model || '-' }}</td>
+              <td>{{ asset.serialNumber }}</td>
+              <td>{{ asset.assignedTo || '-' }}</td>
+              <td>{{ asset.ipAddress || '-' }}</td>
+              <td><select class="status-select" [class]="asset.status.toLowerCase().replace(' ', '-')" [value]="asset.status" (change)="updateStatus(asset, $event)" [attr.aria-label]="'Status for ' + asset.name">@for (status of statuses; track status) { <option [value]="status">{{ status }}</option> }</select></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="empty-state">
+      <i class="fa-solid fa-box-open" aria-hidden="true"></i>
+      <h2>No {{ categoryName() | lowercase }} assets yet</h2>
+      <p>Register an asset from the inventory page and assign it to this category.</p>
+      <a class="btn register-button" routerLink="/adminpage/inventory"><i class="fa-solid fa-plus" aria-hidden="true"></i> Register asset</a>
+    </div>
+  }
+</div>

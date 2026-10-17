@@ -1,0 +1,535 @@
+@if (!formOnly()) {
+<div class="assets-page">
+  <header class="page-header">
+    <div>
+      <span class="section-kicker">Asset operations</span>
+      <h1>Asset inventory</h1>
+      <p>Track every device, its owner, and the next action it needs.</p>
+    </div>
+    <div class="page-actions">
+      <input #assetImport class="visually-hidden" type="file"
+        accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        (change)="importAssets($event)">
+      <button class="btn btn-light" type="button" (click)="openImport(assetImport)">
+        <i class="fa-solid fa-file-import" aria-hidden="true"></i> Import
+      </button>
+      <button class="btn btn-light" type="button" (click)="exportAssets()">
+        <i class="fa-solid fa-file-export" aria-hidden="true"></i> Export
+      </button>
+      <button class="btn register-button" type="button" (click)="openForm()">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i> Register asset
+      </button>
+    </div>
+  </header>
+
+  <section class="category-pages" aria-labelledby="category-pages-title">
+    <div class="category-pages-heading">
+      <div><span class="section-kicker">Dedicated views</span>
+        <h2 id="category-pages-title">Asset categories</h2>
+      </div>
+      <span class="category-pages-note">Filter the inventory list by device group</span>
+    </div>
+    <div class="category-page-grid">
+      <button class="category-page-link" [class.active]="categoryFilter() === 'All'" type="button"
+        (click)="selectCategory('All')">
+        <i class="fa-solid fa-layer-group" aria-hidden="true"></i><span>All assets</span><i
+          class="fa-solid fa-check category-arrow" aria-hidden="true"></i>
+      </button>
+      @for (page of visibleCategoryPages(); track page.slug) {
+      <button class="category-page-link" [class.active]="categoryFilter() === page.label" type="button"
+        (click)="selectCategory(page.label)">
+        <i class="fa-solid" [class]="page.icon" aria-hidden="true"></i><span>{{ page.label }}</span><i
+          class="fa-solid fa-arrow-up-right-from-square category-arrow" aria-hidden="true"></i>
+      </button>
+      }
+      @if (categoryPages().length > 4) {
+      <button class="category-page-link category-more-button" type="button" (click)="toggleCategories()"
+        [attr.aria-expanded]="showAllCategories()">
+        <i class="fa-solid" [class.fa-chevron-down]="!showAllCategories()" [class.fa-chevron-up]="showAllCategories()"
+          aria-hidden="true"></i>
+        <span>{{ showAllCategories() ? 'Show fewer' : 'More categories' }}</span>
+      </button>
+      }
+    </div>
+  </section>
+
+  <section class="summary-grid" aria-label="Asset summary">
+    <article class="summary-card"><span>Total assets</span><strong>{{ summary().total }}</strong><small>Across all
+        locations</small></article>
+    <article class="summary-card operational"><span>Operational</span><strong>{{ summary().operational
+        }}</strong><small>Ready for use</small></article>
+    <article class="summary-card maintenance"><span>Under maintenance</span><strong>{{ summary().maintenance
+        }}</strong><small>Needs attention</small></article>
+    <article class="summary-card storage"><span>In storage</span><strong>{{ summary().storage
+        }}</strong><small>Available to assign</small></article>
+  </section>
+
+  <section class="inventory-panel" aria-labelledby="inventory-title" [class.roomy-view]="viewMode() === 'Card'">
+    <div class="panel-toolbar">
+      <div>
+        <span class="section-kicker">Live register</span>
+        <h2 id="inventory-title">All assets <span>{{ filteredAssets().length }}</span></h2>
+      </div>
+      <div class="filters" role="search">
+        <div>
+          <button class="delete-button" type="button" [disabled]="!canBulkDelete()" (click)="openBulkDeleteModal()"
+            [attr.aria-label]="'Delete selected assets'"
+            [title]="canBulkDelete() ? 'Delete selected groups' : 'Select more than 3 groups to enable deletion'">
+            <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="layout-picker" aria-label="Table view modes">
+          <button class="layout-trigger" type="button" [attr.aria-expanded]="layoutMenuOpen()"
+            (click)="layoutMenuOpen.set(!layoutMenuOpen())">
+            <i class="fa-solid layout-icon" [class.fa-list]="viewMode() === 'List'"
+              [class.fa-grip]="viewMode() === 'Card'" aria-hidden="true"></i>
+            <span>{{ viewMode() }}</span>
+            <i class="fa-solid fa-chevron-down layout-arrow" aria-hidden="true"></i>
+          </button>
+          @if (layoutMenuOpen()) {
+          <div class="layout-menu" role="menu" aria-label="Choose layout">
+            @for (mode of viewModes; track mode.name) {
+            <button class="layout-option" type="button" role="menuitem" [class.active]="viewMode() === mode.name"
+              (click)="selectLayout(mode.name)">
+              <i class="fa-solid" [class.fa-list]="mode.name === 'List'" [class.fa-grip]="mode.name === 'Card'"
+                aria-hidden="true"></i>
+              <span>{{ mode.name }}</span>
+            </button>
+            }
+          </div>
+          }
+        </div>
+        <label class="search-field">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <span class="visually-hidden">Search assets</span>
+          <input type="search" placeholder="Search name, serial, owner..." [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)">
+        </label>
+        <label class="select-field">
+          <span class="visually-hidden">Filter by category</span>
+          <select [ngModel]="categoryFilter()" (ngModelChange)="selectCategory($event)">
+            <option value="All">All categories</option>
+            @for (category of categories(); track category) { <option [value]="category">{{ category }}</option> }
+          </select>
+        </label>
+        <label class="select-field">
+          <span class="visually-hidden">Filter by status</span>
+          <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+            <option value="All">All statuses</option>
+            @for (status of statuses; track status) { <option [value]="status">{{ status }}</option> }
+          </select>
+        </label>
+        <button class="clear-button" type="button" (click)="clearFilters()">Clear</button>
+      </div>
+    </div>
+    @if (statusError()) { <p class="status-error" role="alert">{{ statusError() }}</p> }
+
+    @if (assetGroups().length) {
+    @if (viewMode() === 'Card') {
+    <div class="asset-card-list">
+      @for (group of assetGroups(); track group.key) {
+      @for (asset of group.assets; track asset.id) {
+      <article class="asset-card" [class]="asset.status.toLowerCase().replace(' ', '-')">
+        <div class="asset-card-header">
+          <div>
+            <span class="asset-card-label">Asset</span>
+            <h3>{{ asset.machineName || asset.name }}</h3>
+          </div>
+          <span class="status-pill">{{ asset.status }}</span>
+        </div>
+
+        <div class="asset-card-grid">
+          <div>
+            <span>Category</span>
+            <strong>{{ asset.category }}</strong>
+          </div>
+          <div>
+            <span>Product</span>
+            <strong>{{ asset.productName || '-' }}</strong>
+          </div>
+          <div>
+            <span>Make</span>
+            <strong>{{ asset.make || '-' }}</strong>
+          </div>
+          <div>
+            <span>Model</span>
+            <strong>{{ asset.model || '-' }}</strong>
+          </div>
+          <div>
+            <span>Serial</span>
+            <strong>{{ asset.serialNumber }}</strong>
+          </div>
+          <div>
+            <span>User</span>
+            <strong>{{ asset.assignedTo || '-' }}</strong>
+          </div>
+          <div>
+            <span>IP</span>
+            <strong>{{ isValidIp(asset.ipAddress) ? asset.ipAddress : '-' }}</strong>
+          </div>
+          <div>
+            <span>Next check</span>
+            <strong>{{ asset.nextMaintenanceDate | date:'mediumDate' }}</strong>
+          </div>
+        </div>
+
+        <div class="asset-card-actions">
+          <div class="mini-status">
+            <span>Status</span>
+            <select class="status-select" [class]="asset.status.toLowerCase().replace(' ', '-')" [value]="asset.status"
+              (change)="updateStatus( group, $event)"
+              [attr.aria-label]="'Status for ' + (asset.machineName || asset.name)">
+              @for (status of statuses; track status) { <option [value]="status">{{ status }}</option> }
+            </select>
+          </div>
+          <button class="delete-button" type="button" (click)="askToDelete(asset)"
+            [attr.aria-label]="'Delete ' + (asset.machineName || asset.name)" title="Delete asset"><i
+              class="fa-regular fa-trash-can" aria-hidden="true"></i></button>
+        </div>
+      </article>
+      }
+      }
+    </div>
+    } @else {
+
+    <div class="table-wrap">
+      <table class="asset-table">
+        <caption class="visually-hidden">Asset inventory list</caption>
+        <colgroup>
+          <col class="column-number">
+          <col class="column-checkbox">
+          <col class="column-machine">
+          <col class="column-product">
+          <col class="column-make">
+          <col class="column-model">
+          <col class="column-serial">
+          <col class="column-user">
+          <col class="column-ip">
+          <col class="column-status">
+          <col class="column-event">
+          <col class="column-actions">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="grouped-cell checkbox-cell">
+              <input type="checkbox" (change)="toggleAllGroupSelection($event)" aria-label="Select all asset groups" />
+            </th>
+            <th>S.No</th>
+            <th>Machine Name</th>
+            <th>Product Name</th>
+            <th>Make</th>
+            <th>Model</th>
+            <th>Serial Number</th>
+            <th>User Name</th>
+            <th>IP</th>
+            <th>Status</th>
+            <th>Event</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody (dblclick)="toggleCellExpansion($event)">
+          @for (group of assetGroups(); track group.key; let groupNumber = $index) {
+          @for (asset of group.assets; track asset.id; let assetNumber = $index) {
+          <tr>
+            @if (assetNumber === 0) {
+            <td class="grouped-cell checkbox-cell" [rowSpan]="group.assets.length">
+              <input type="checkbox" [checked]="isGroupSelected(group)" (change)="toggleGroupSelection(group, $event)"
+                [attr.aria-label]="'Select group ' + group.key" />
+            </td>
+            <td class="serial-cell grouped-cell" [rowSpan]="group.assets.length">{{ groupNumber + 1 }}</td>
+            <td class="grouped-cell" [rowSpan]="group.assets.length">
+              <strong>{{ group.assets[0].machineName || group.assets[0].name }}</strong>
+              <span>{{ group.assets[0].id }}</span>
+            </td>
+            }
+            <td>{{ asset.productName || '-' }}</td>
+            <td>{{ asset.make || '-' }}</td>
+            <td>{{ asset.model || '-' }}</td>
+            <td>{{ asset.serialNumber }}</td>
+            @if (assetNumber === 0) {
+            <td class="grouped-cell" [rowSpan]="group.assets.length">
+              {{ group.assets[0].assignedTo || '-' }}
+            </td>
+            <td class="grouped-cell ip-cell" [rowSpan]="group.assets.length">
+              {{ isValidIp(group.assets[0].ipAddress) ? group.assets[0].ipAddress : '-' }}
+            </td>
+            <td class="grouped-cell status-cell" [rowSpan]="group.assets.length">
+              <select class="status-select" [class]="group.assets[0].status.toLowerCase().replace(' ', '-')"
+                [value]="group.assets[0].status" (change)="updateStatus(group, $event)"
+                [attr.aria-label]="'Status for ' + group.key">
+                @for (status of statuses; track status) { <option [value]="status">{{ status }}</option> }
+              </select>
+            </td>
+            <td class="grouped-cell event-cell" [rowSpan]="group.assets.length">Next maintenance<br><span>{{
+                group.assets[0].nextMaintenanceDate | date:'mediumDate' }}</span></td>
+            <td class="grouped-cell delete-cell" [rowSpan]="group.assets.length">
+              <button class="delete-button" type="button" (click)="askToDelete(group.assets[0])"
+                [attr.aria-label]="'Delete ' + group.key" title="Delete asset">
+                <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="edit-button" (click)="openEditForm(group)">
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+              </button>
+            </td>
+            }
+          </tr>
+          }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    }
+    } @else {
+    <div class="empty-state"><i class="fa-solid fa-box-open" aria-hidden="true"></i>
+      <h3>No assets found</h3>
+      <p>Try adjusting the filters or register a new asset.</p><button class="btn btn-outline-secondary" type="button"
+        (click)="clearFilters()">Reset filters</button>
+    </div>
+    }
+  </section>
+</div>
+}
+
+@if (isFormOpen()) {
+<div class="modal-backdrop" role="presentation" (click)="closeForm()">
+  <section class="asset-modal" role="dialog" aria-modal="true" aria-labelledby="register-title"
+    (click)="$event.stopPropagation()">
+    <div class="modal-heading">
+      <div><span class="section-kicker">Inventory update</span>
+        <h2 id="register-title">Register {{ newAsset.category }} asset</h2>
+      </div><button class="close-button" type="button" (click)="closeForm()"
+        aria-label="Close registration form">&times;</button>
+    </div>
+    <form #assetForm="ngForm" (ngSubmit)="registerAsset()">
+      <div class="form-grid">
+        <label>Category<select name="category" [ngModel]="newAsset.category"
+            (ngModelChange)="selectFormCategory($event)" required>@for (category of categories(); track category) {
+            <option [value]="category">{{ category }}</option> }
+          </select></label>
+        <label>{{ formProfile().assetLabel }}<input name="machineName" [(ngModel)]="newAsset.machineName"
+            [placeholder]="formProfile().assetPlaceholder" required></label>
+        <label>{{ formProfile().productLabel }}<input name="productName" [(ngModel)]="newAsset.productName"
+            [placeholder]="formProfile().productPlaceholder"></label>
+        <label>{{ formProfile().makeLabel }}<input name="make" [(ngModel)]="newAsset.make"
+            [placeholder]="formProfile().makePlaceholder"></label>
+        <label>{{ formProfile().modelLabel }}<input name="model" [(ngModel)]="newAsset.model"
+            [placeholder]="formProfile().modelPlaceholder"></label>
+        <label>{{ formProfile().serialLabel }}<input name="serial" [(ngModel)]="newAsset.serialNumber"
+            [placeholder]="formProfile().serialPlaceholder" required></label>
+        @if (formProfile().showIpAddress) {
+        <label>{{ networkFieldLabel() }}<input name="ipAddress" [(ngModel)]="newAsset.ipAddress"
+            [placeholder]="networkFieldPlaceholder()"></label>
+        }
+        @if (formProfile().showAssignedTo) {
+        <label>Assigned to<input name="assignedTo" [(ngModel)]="newAsset.assignedTo"
+            [placeholder]="formProfile().assignedPlaceholder"></label>
+        }
+        <label>Location<input name="location" [(ngModel)]="newAsset.location"
+            [placeholder]="formProfile().locationPlaceholder"></label>
+        <label>Next maintenance<input name="maintenance" type="date" [(ngModel)]="newAsset.nextMaintenanceDate"
+            required></label>
+      </div>
+      @if (formError()) { <p class="form-error" role="alert">{{ formError() }}</p> }
+      <div class="modal-actions"><button class="btn btn-light" type="button"
+          (click)="closeForm()">Cancel</button><button class="btn register-button" type="submit"
+          [disabled]="assetForm.invalid">Save asset</button></div>
+    </form>
+  </section>
+</div>
+}
+
+@if (pendingDelete(); as asset) {
+<div class="modal-backdrop" role="presentation" (click)="cancelDelete()">
+  <section class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title"
+    (click)="$event.stopPropagation()">
+    <h2 id="delete-title">Delete {{ asset.name }}?</h2>
+    <p>This removes the asset from the inventory. This action cannot be undone.</p>
+    <div class="modal-actions"><button class="btn btn-light" type="button"
+        (click)="cancelDelete()">Cancel</button><button class="btn delete-confirm" type="button"
+        (click)="deleteAsset()">Delete asset</button></div>
+  </section>
+</div>
+}
+
+@if (importPreview().length) {
+<div class="modal-backdrop" role="presentation" (click)="cancelImport()">
+  <section class="asset-modal import-preview-modal" role="dialog" aria-modal="true"
+    aria-labelledby="import-preview-title" (click)="$event.stopPropagation()">
+    <div class="modal-heading">
+      <div><span class="section-kicker">Import preview</span>
+        <h2 id="import-preview-title">Review {{ importPreview().length }} assets</h2>
+      </div><button class="close-button" type="button" (click)="cancelImport()"
+        aria-label="Close import preview">&times;</button>
+    </div>
+    <p class="import-preview-legend"><span class="new-data-swatch" aria-hidden="true"></span> Highlighted rows are new
+      records not currently in your inventory. Everything else already exists and will be updated in place.</p>
+    <div class="import-preview-table-wrap">
+      <table class="asset-table import-preview-table">
+        <caption class="visually-hidden">Imported asset preview</caption>
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Machine Name</th>
+            <th>Product Name</th>
+            <th>Make</th>
+            <th>Model</th>
+            <th>Serial Number</th>
+            <th>User Name</th>
+            <th>IP</th>
+            <th>Location</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (group of importGroups(); track group.key; let groupNumber = $index) {
+          @for (asset of group.assets; track $index; let assetNumber = $index) {
+          <tr [class.new-row]="asset.isNew">
+            @if (assetNumber === 0) {
+            <td class="serial-cell grouped-cell" [class.new-row]="isNewImportGroup(group)"
+              [rowSpan]="group.assets.length">{{ groupNumber + 1 }}</td>
+            <td class="grouped-cell" [class.new-row]="isNewImportGroup(group)" [rowSpan]="group.assets.length">
+              <strong>{{ group.assets[0].machineName || group.assets[0].name }}</strong>
+              @if (isNewImportGroup(group)) {
+              <span class="new-data-badge">New</span>
+              }
+            </td>
+            }
+            <td>{{ asset.productName || 'null' }}
+              @if (asset.isNew && !isNewImportGroup(group)) {
+              <span class="new-data-badge">New</span>
+              }
+            </td>
+            <td>{{ asset.make || 'null' }}</td>
+            <td>{{ asset.model || 'null' }}</td>
+            <td>{{ asset.serialNumber }}</td>
+            @if (assetNumber === 0) {
+            <td class="grouped-cell" [class.new-row]="isNewImportGroup(group)" [rowSpan]="group.assets.length">{{
+              group.assets[0].assignedTo || 'null' }}</td>
+            <td class="grouped-cell ip-cell" [class.new-row]="isNewImportGroup(group)" [rowSpan]="group.assets.length">
+              {{ group.assets[0].ipAddress || 'null' }}
+            </td>
+            <td class="grouped-cell" [class.new-row]="isNewImportGroup(group)" [rowSpan]="group.assets.length">{{
+              group.assets[0].location || 'null' }}</td>
+            }
+          </tr>
+          }
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-actions"><button class="btn btn-light" type="button"
+        (click)="cancelImport()">Cancel</button><button class="btn register-button" type="button"
+        (click)="confirmImport()">Import assets</button></div>
+  </section>
+</div>
+}
+
+@if (isCategoryFormOpen()) {
+<div class="modal-backdrop" role="presentation" (click)="closeCategoryForm()">
+  <section class="asset-modal category-modal" role="dialog" aria-modal="true" aria-labelledby="category-page-title"
+    (click)="$event.stopPropagation()">
+    <div class="modal-heading">
+      <div><span class="section-kicker">Inventory setup</span>
+        <h2 id="category-page-title">Create a category page</h2>
+      </div><button class="close-button" type="button" (click)="closeCategoryForm()"
+        aria-label="Close category form">&times;</button>
+    </div>
+    <form #categoryForm="ngForm" (ngSubmit)="createCategoryPage()">
+      <label class="category-name-field">Category name<input name="categoryName" [(ngModel)]="newCategoryName"
+          placeholder="e.g. CCTV" required autofocus></label>
+      @if (categoryPageError()) { <p class="form-error" role="alert">{{ categoryPageError() }}</p> }
+      <div class="modal-actions"><button class="btn btn-light" type="button"
+          (click)="closeCategoryForm()">Cancel</button><button class="btn register-button" type="submit"
+          [disabled]="categoryForm.invalid">Create page</button></div>
+    </form>
+  </section>
+</div>
+}
+
+
+@if (isEditModalOpen()) {
+<div class="modal-backdrop" (click)="closeEditModal()">
+  <div class="modal-container large-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Edit Asset Group: {{ editingGroupName() }}</h3>
+      <button type="button" class="close-btn" (click)="closeEditModal()">&times;</button>
+    </div>
+
+    <form [formGroup]="groupEditForm" (ngSubmit)="onSaveGroup()">
+      <!-- Shared Machine Settings -->
+      <div class="section-title">Machine Information</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="machineName">Machine Name</label>
+          <input id="machineName" type="text" formControlName="machineName" />
+        </div>
+        <div class="form-group">
+          <label for="assignedTo">User Name</label>
+          <input id="assignedTo" type="text" formControlName="assignedTo" />
+        </div>
+        <div class="form-group">
+          <label for="ipAddress">IP Address</label>
+          <input id="ipAddress" type="text" formControlName="ipAddress" />
+        </div>
+        <div class="form-group">
+          <label for="status">Group Status</label>
+          <select id="status" formControlName="status">
+            <option value="Operational">Operational</option>
+            <option value="Under Maintenance">Under Maintenance</option>
+            <option value="In Storage">In Storage</option>
+            <option value="Decommissioned">Decommissioned</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Sub-Assets List -->
+      <div class="section-title">Components / Hardware</div>
+      <div formArrayName="assets" class="sub-assets-list">
+        @for (assetGroup of subAssets.controls; track $index; let i = $index) {
+        <div [formGroupName]="i" class="sub-asset-row">
+          <div class="form-group">
+            <label>Product Name</label>
+            <input type="text" formControlName="productName" />
+          </div>
+          <div class="form-group">
+            <label>Make</label>
+            <input type="text" formControlName="make" />
+          </div>
+          <div class="form-group">
+            <label>Model</label>
+            <input type="text" formControlName="model" />
+          </div>
+          <div class="form-group">
+            <label>Serial Number</label>
+            <input type="text" formControlName="serialNumber" />
+          </div>
+        </div>
+        }
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="closeEditModal()">Cancel</button>
+        <button type="submit" class="btn-primary" [disabled]="groupEditForm.invalid">Save All Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+}
+
+
+<!-- Bulk Delete Confirmation Modal -->
+@if (showBulkDeleteModal()) {
+<div class="modal-backdrop">
+  <div class="modal-container" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <h2 id="modal-title">Delete {{ selectedGroupKeys().size }} selected asset groups?</h2>
+    <p>This removes the selected assets from the inventory. This action cannot be undone.</p>
+
+    <hr />
+
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" (click)="closeBulkDeleteModal()">Cancel</button>
+      <button type="button" class="btn-delete" (click)="confirmDeleteSelectedGroups()">Delete assets</button>
+    </div>
+  </div>
+</div>
+}

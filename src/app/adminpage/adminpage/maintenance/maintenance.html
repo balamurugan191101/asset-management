@@ -1,0 +1,118 @@
+<div class="maintenance-page">
+  <header class="maintenance-hero">
+    <div>
+      <span class="section-kicker">Service operations</span>
+      <h1>{{ viewTitle() }}</h1>
+      <p>{{ viewDescription() }}</p>
+    </div>
+    <button class="btn create-work-order" type="button" (click)="openWorkOrder()">
+      <i class="fa-solid fa-plus" aria-hidden="true"></i> Create work order
+    </button>
+  </header>
+
+  <section class="summary-grid" aria-label="Maintenance summary">
+    <article class="summary-card overdue"><span>Overdue</span><strong>{{ overdueAssets().length }}</strong><small>Needs attention now</small></article>
+    <article class="summary-card due"><span>Due in 30 days</span><strong>{{ dueSoonAssets().length }}</strong><small>Plan the next service window</small></article>
+    <article class="summary-card active"><span>Open work orders</span><strong>{{ activeLogs().length }}</strong><small>Pending or in progress</small></article>
+    <article class="summary-card complete"><span>Completed</span><strong>{{ completedLogs().length }}</strong><small>Recorded service jobs</small></article>
+  </section>
+
+  <section class="maintenance-panel" aria-labelledby="maintenance-register-title">
+    <nav class="view-tabs" aria-label="Maintenance views">
+      <button type="button" [class.active]="activeView() === 'work-orders'" (click)="selectView('work-orders')">Work orders</button>
+      <button type="button" [class.active]="activeView() === 'schedule'" (click)="selectView('schedule')">Maintenance schedule</button>
+      <button type="button" [class.active]="activeView() === 'history'" (click)="selectView('history')">Service history</button>
+    </nav>
+    <div class="panel-toolbar">
+      <div>
+        <span class="section-kicker dark">Service register</span>
+        <h2 id="maintenance-register-title">{{ viewTitle() }} <span>{{ maintenanceItems().length }}</span></h2>
+      </div>
+      <label class="search-field">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <span class="visually-hidden">Search maintenance records</span>
+        <input type="search" placeholder="Search asset or technician..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+      </label>
+    </div>
+
+    <div class="filter-row" aria-label="Maintenance filters">
+      @for (filter of filters(); track filter) {
+        <button type="button" class="filter-button" [class.active]="selectedFilter() === filter" (click)="selectFilter(filter)">{{ filter }}</button>
+      }
+    </div>
+
+    @if (activeView() === 'history') {
+      @if (historyItems().length) {
+        <div class="table-wrap">
+          <table class="maintenance-table history-table">
+            <caption class="visually-hidden">Completed service history</caption>
+            <thead><tr><th>Asset</th><th>Work completed</th><th>Technician</th><th>Completed on</th><th>Cost</th><th>Status</th></tr></thead>
+            <tbody>
+              @for (log of historyItems(); track log.id) {
+                <tr>
+                  <td><strong>{{ assetName(log.assetId) }}</strong><span>{{ assetSerial(log.assetId) }}</span></td>
+                  <td>{{ log.issueDescription }}</td>
+                  <td>{{ log.technician }}</td>
+                  <td>{{ (log.completedAt || log.createdAt) | date:'mediumDate' }}</td>
+                  <td>{{ log.cost | currency:'USD':'symbol':'1.2-2' }}</td>
+                  <td><span class="status completed">Completed</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state"><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i><h3>No completed maintenance records</h3><p>Completed work orders will appear here.</p></div>
+      }
+    } @else if (maintenanceItems().length) {
+      <div class="table-wrap">
+        <table class="maintenance-table">
+          <caption class="visually-hidden">{{ viewTitle() }}</caption>
+          <thead><tr><th>Asset</th><th>Category</th><th>Due date</th><th>Priority</th><th>Work order</th><th>Technician</th><th>Status</th><th><span class="visually-hidden">Action</span></th></tr></thead>
+          <tbody>
+            @for (asset of maintenanceItems(); track asset.id) {
+              @let log = latestLogFor(asset.id);
+              <tr>
+                <td><strong>{{ asset.machineName || asset.name }}</strong><span>{{ asset.serialNumber }}</span></td>
+                <td>{{ asset.category }}</td>
+                <td>{{ asset.nextMaintenanceDate | date:'mediumDate' }}</td>
+                <td><span class="priority" [class.overdue]="isOverdue(asset)" [class.due]="isDueSoon(asset)">{{ dueLabel(asset) }}</span></td>
+                <td>{{ log?.issueDescription || 'No work order created' }}</td>
+                <td>{{ log?.technician || '—' }}</td>
+                <td><span class="status" [class.pending]="log?.status === 'Pending'" [class.progress]="log?.status === 'In Progress'" [class.completed]="log?.status === 'Completed'">{{ log?.status || 'Scheduled' }}</span></td>
+                <td class="actions">
+                  @if (log && log.status !== 'Completed') {
+                    <button class="complete-button" type="button" (click)="completeWorkOrder(log)">Complete</button>
+                  } @else {
+                    <button class="schedule-button" type="button" (click)="openWorkOrder(asset)">Schedule</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state"><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i><h3>No matching maintenance records</h3><p>Try another filter or create a new work order.</p></div>
+    }
+  </section>
+</div>
+
+@if (isFormOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeWorkOrder()">
+    <section class="work-order-modal" role="dialog" aria-modal="true" aria-labelledby="work-order-title" (click)="$event.stopPropagation()">
+      <div class="modal-heading"><div><span class="section-kicker dark">Maintenance planning</span><h2 id="work-order-title">Create work order</h2></div><button class="close-button" type="button" aria-label="Close work order form" (click)="closeWorkOrder()">&times;</button></div>
+      <form #workOrderForm="ngForm" (ngSubmit)="createWorkOrder()">
+        <div class="form-grid">
+          <label>Asset<select name="asset" [(ngModel)]="newWorkOrder.assetId" required><option value="" disabled>Select an asset</option>@for (asset of assets(); track asset.id) { <option [value]="asset.id">{{ asset.machineName || asset.name }} · {{ asset.serialNumber }}</option> }</select></label>
+          <label>Technician or team<input name="technician" [(ngModel)]="newWorkOrder.technician" placeholder="e.g. Infrastructure team" required></label>
+          <label class="wide">Maintenance details<textarea name="details" [(ngModel)]="newWorkOrder.issueDescription" placeholder="Describe the inspection, repair, or preventive work" rows="4" required></textarea></label>
+          <label>Estimated cost<input name="cost" [(ngModel)]="newWorkOrder.cost" type="number" min="0" step="0.01"></label>
+          <label>Initial status<select name="status" [(ngModel)]="newWorkOrder.status"><option value="Pending">Pending</option><option value="In Progress">In Progress</option></select></label>
+        </div>
+        @if (formError()) { <p class="form-error" role="alert">{{ formError() }}</p> }
+        <div class="modal-actions"><button class="btn btn-light" type="button" (click)="closeWorkOrder()">Cancel</button><button class="btn create-work-order" type="submit" [disabled]="workOrderForm.invalid">Create work order</button></div>
+      </form>
+    </section>
+  </div>
+}

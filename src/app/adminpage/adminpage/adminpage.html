@@ -1,0 +1,154 @@
+<div class="header-bg container-fluid py-2 ">
+  <div class="row align-items-center g-2">
+
+    <!-- Logo -->
+    <div class="col-6 col-md-3 d-flex align-items-center">
+      <i class="fa-regular fa-building text-light fs-3"></i>
+      <h1 class="fs-6 text-light ms-2 mb-0">iFluids Engineering</h1>
+    </div>
+
+    <!-- Search (DESKTOP / TABLET) -->
+    <div class="col-12 col-md-5 order-3 order-md-2 mt-2 mt-md-0 d-none d-md-block">
+      <form class="search-wrapper" (ngSubmit)="submitSearch()">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input name="desktopSearch" type="search" class="form-control search-input" placeholder="Search assets" aria-label="Search assets" [(ngModel)]="searchTerm">
+        <button class="search-submit" type="submit" aria-label="Search assets"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+      </form>
+    </div>
+
+    <!-- Search Icon (MOBILE) -->
+    <div class="col-3 d-block d-md-none text-end">
+      <button class="btn icon-btn text-light" type="button" (click)="toggleMobileSearch()" aria-label="Open search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+    </div>
+
+    <!-- Right Icons -->
+    <div class="col-3 col-md-4 d-flex justify-content-end gap-3 order-2 order-md-3">
+
+      <!-- Profile offcanvas -->
+      <button class="btn icon-btn text-light" type="button" (click)="toggleProfileSidebar()" aria-label="Open profile sidebar">
+        <i class="fa-solid fa-user"></i>
+      </button>
+
+      <!-- Hamburger / Close toggle -->
+      <button
+        class="btn icon-btn text-light d-lg-none"
+        type="button"
+        (click)="toggleNavbar()"
+        aria-label="Toggle navigation"
+        aria-controls="navbarNavDropdown"
+        [attr.aria-expanded]="isNavbarOpen">
+        <i class="fa-solid" [class.fa-xmark]="isNavbarOpen" [class.fa-bars]="!isNavbarOpen" aria-hidden="true"></i>
+      </button>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- MOBILE SEARCH DROPDOWN -->
+<div class="mobile-search-box" *ngIf="showMobileSearch">
+  <form (ngSubmit)="submitSearch()">
+    <input name="mobileSearch" type="search" class="form-control mobile-search-input" placeholder="Search assets" aria-label="Search assets" [(ngModel)]="searchTerm" autofocus>
+  </form>
+</div>
+
+<!-- PROFILE SIDEBAR -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">iFluids Engineering</h5>
+    <button type="button" class="btn-close" aria-label="Close profile sidebar" (click)="closeProfileSidebar()"></button>
+  </div>
+  <div class="offcanvas-body text-center">
+
+    <div class="mb-3 d-flex d-flex justify-content-center align-items-center">
+      <img *ngIf="imageurl" [src]="userimgpath" class="userimag" (click)="onUploadClick(fileInput)">
+      <i *ngIf="!imageurl" class="fa-solid fa-user userimag" (click)="onUploadClick(fileInput)"></i>
+      <input type="file" #fileInput (change)="onFileSelected($event)" class="d-none">
+    </div>
+
+    <h4 class="mb-3">{{ username }}</h4>
+
+    <div class="row text-center">
+      <div class="col-6 py-2 border" (click)="myaccount()" data-bs-dismiss="offcanvas">
+        My Account
+      </div>
+
+      <div class="col-6 py-2 border" (click)="logout()">
+        Logout
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- IT ASSET MANAGEMENT NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark p-0" aria-label="IT asset management navigation">
+  <div class="container-fluid">
+
+    <div class="collapse navbar-collapse" id="navbarNavDropdown" [class.show]="isNavbarOpen">
+
+      <ul class="navbar-nav">
+
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/adminpage/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeNavbar()">
+            <i class="fa-solid fa-gauge-high me-2" aria-hidden="true"></i>Dashboard
+          </a>
+        </li>
+
+        <li class="nav-item dropdown" (mouseleave)="openDropdown === 'assets' && closeDropdown()">
+          <button class="nav-link dropdown-toggle" type="button" (click)="toggleDropdown('assets')" [class.show]="openDropdown === 'assets'" aria-controls="assetsMenu" [attr.aria-expanded]="openDropdown === 'assets'">
+            <i class="fa-solid fa-boxes-stacked me-2" aria-hidden="true"></i>Assets
+          </button>
+          <ul class="dropdown-menu" id="assetsMenu" [class.show]="openDropdown === 'assets'">
+            <li><a class="dropdown-item" routerLink="/adminpage/inventory" (click)="closeNavbar()">Asset Inventory</a></li>
+            <li><a class="dropdown-item" routerLink="/adminpage/inventory" (click)="closeNavbar()">Register Asset</a></li>
+            <li><a class="dropdown-item" routerLink="/adminpage/inventory" (click)="closeNavbar()">Asset Assignments</a></li>
+          </ul>
+        </li>
+
+        <li class="nav-item dropdown" (mouseleave)="openDropdown === 'maintenance' && closeDropdown()">
+          <button class="nav-link dropdown-toggle" type="button" (click)="toggleDropdown('maintenance')" [class.show]="openDropdown === 'maintenance'" aria-controls="maintenanceMenu" [attr.aria-expanded]="openDropdown === 'maintenance'">
+            <i class="fa-solid fa-screwdriver-wrench me-2" aria-hidden="true"></i>Maintenance
+          </button>
+          <ul class="dropdown-menu" id="maintenanceMenu" [class.show]="openDropdown === 'maintenance'">
+            <li><a class="dropdown-item" routerLink="/adminpage/maintenance" [queryParams]="{ view: 'work-orders' }" (click)="closeNavbar()">Work orders</a></li>
+            <li><a class="dropdown-item" routerLink="/adminpage/maintenance" [queryParams]="{ view: 'schedule' }" (click)="closeNavbar()">Maintenance schedule</a></li>
+            <li><a class="dropdown-item" routerLink="/adminpage/maintenance" [queryParams]="{ view: 'history' }" (click)="closeNavbar()">Service history</a></li>
+          </ul>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/adminpage/users" routerLinkActive="active" (click)="closeNavbar()">
+            <i class="fa-solid fa-users me-2" aria-hidden="true"></i>Users &amp; Roles
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <button class="nav-link" type="button" disabled>
+            <i class="fa-solid fa-building me-2" aria-hidden="true"></i>Vendors
+          </button>
+        </li>
+
+        <li class="nav-item dropdown" (mouseleave)="openDropdown === 'reports' && closeDropdown()">
+          <button class="nav-link dropdown-toggle" type="button" (click)="toggleDropdown('reports')" [class.show]="openDropdown === 'reports'" aria-controls="reportsMenu" [attr.aria-expanded]="openDropdown === 'reports'">
+            <i class="fa-solid fa-chart-line me-2" aria-hidden="true"></i>Reports
+          </button>
+          <ul class="dropdown-menu" id="reportsMenu" [class.show]="openDropdown === 'reports'">
+            <li><button class="dropdown-item" type="button" disabled>Asset Reports</button></li>
+            <li><button class="dropdown-item" type="button" disabled>Maintenance Reports</button></li>
+            <li><button class="dropdown-item" type="button" disabled>Audit Logs</button></li>
+          </ul>
+        </li>
+
+      </ul>
+
+    </div>
+
+  </div>
+</nav>
+
+<main class="route-content">
+  <router-outlet></router-outlet>
+</main>

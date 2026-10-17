@@ -1,0 +1,49 @@
+<form class="create-user-form" (ngSubmit)="submit()" novalidate>
+  <div class="create-user-grid">
+    <div class="create-user-field">
+      <label for="modalFirstName">First name</label>
+      <input id="modalFirstName" name="firstName" type="text" [(ngModel)]="user.firstName" autocomplete="given-name" placeholder="e.g. Sarah">
+      <small *ngIf="submitted && !user.firstName" class="modal-field-error">First name is required.</small>
+    </div>
+    <div class="create-user-field">
+      <label for="modalLastName">Last name</label>
+      <input id="modalLastName" name="lastName" type="text" [(ngModel)]="user.lastName" autocomplete="family-name" placeholder="e.g. Smith">
+      <small *ngIf="submitted && !user.lastName" class="modal-field-error">Last name is required.</small>
+    </div>
+    <div class="create-user-field">
+      <label for="modalEmail">Work email</label>
+      <input id="modalEmail" name="email" type="email" [(ngModel)]="user.email" autocomplete="email" placeholder="name@company.com">
+      <small *ngIf="submitted && !user.email" class="modal-field-error">Work email is required.</small>
+    </div>
+    <div class="create-user-field">
+      <label for="modalPassword">Password</label>
+      <input id="modalPassword" name="password" type="password" [(ngModel)]="user.password" autocomplete="new-password" minlength="6" placeholder="Enter a password">
+      <small *ngIf="submitted && user.password.length < 6" class="modal-field-error">Password must be at least 6 characters.</small>
+    </div>
+    <div class="create-user-field">
+      <label for="modalEmployeeId">Employee ID</label>
+      <input id="modalEmployeeId" name="employeeId" type="text" [(ngModel)]="user.employeeId" placeholder="e.g. EMP-1042">
+      <small *ngIf="submitted && !user.employeeId" class="modal-field-error">Employee ID is required.</small>
+    </div>
+    <div class="create-user-field">
+      <label for="modalRole">Role</label>
+      <select id="modalRole" name="role" [(ngModel)]="user.role">
+        <option>Technician</option>
+        <option>Administrator</option>
+        <option>Viewer</option>
+      </select>
+    </div>
+    <div class="create-user-field">
+      <label for="modalDepartment">Department</label>
+      <input id="modalDepartment" name="department" type="text" [(ngModel)]="user.department" placeholder="e.g. Infrastructure">
+      <small *ngIf="submitted && !user.department" class="modal-field-error">Department is required.</small>
+    </div>
+  </div>
+
+  <div class="create-user-form-actions">
+    <button class="btn btn-light" type="button" (click)="cancel()">Cancel</button>
+    <button class="btn btn-primary" type="submit" [disabled]="!isValid">
+      <i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i>Create user
+    </button>
+  </div>
+</form>
